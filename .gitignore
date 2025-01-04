@@ -1,0 +1,5 @@
+DOT-config/log
+DOT-config/mpd/log
+DOT-config/mpd/pid
+DOT-config/mpd/state
+DOT-config/mpd/sticker.sql
