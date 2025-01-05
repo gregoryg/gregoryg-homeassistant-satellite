@@ -2,13 +2,37 @@
 #+title: Set up a Home Assistant Satellite with Voice
 * Setting up on Raspberry Pi OS
 ** Start with a Voice Assistant pipeline in Home Assistant
+   Show the integrations that have to be installed in Home Assistant server:
+*** Wyoming Protocol
+       A simple protocol developed by the Home Assistant project to use in the Voice Assistant pipeline
+       This protocol establishes the communication framework between all the voice pipeline components.
+
+       The protocol is embedded in the Python =wyoming= package
+*** Open Wakeword
+      Your purpose is to pass the butter
+*** Wyoming Satellite
+      This is not an integration installed in Home Assistant, but a service running on each satellite device and registered using the Wyoming Protocol
+*** Whisper (speech to text)
+      You may choose an alternate based on CPU and GPU power you have available.
+*** Ollama for self-hosted LLM
+    :PROPERTIES:
+    :image:    img/ollama-models-with-tools-tag.png
+    :END:
+      + and/or OpenAI
+      The model chosen must be handy (capable of using tools)
+      The model will return optional instructions to Home Assistant and conversational text
+*** Piper (text to speech)
+      + and/or Google Translate
+      + and/or ElevenLabs TTS
 ** Install Raspberry PI OS using Raspberry Pi Imager
    :PROPERTIES:
    :image:    img/raspberry-pi-download-page.png
    :END:
    + [[https://www.raspberrypi.com/software/][Raspberry Pi OS – Raspberry Pi ≫ www.raspberrypi.com]]
 
-     Download the Raspberry Pi OS 64-bit with standard desktop, not the extra suggested packages
+     Select the Raspberry Pi OS 64-bit with standard desktop, not the extra suggested packages
+
+     Have your storage (micro SD, USB flash memory, EMMC) ready!
 
 ** Use Imager to burn image with user settings onto storage
    :PROPERTIES:
@@ -26,15 +50,24 @@
      + good idea to add an ssh public key - or choose SSH password authentication if you must
 
 
-** Boot Pi using the newly imaged micro SD card
+** Boot Pi using the newly imaged storage
    :PROPERTIES:
    :image:    img/raspberry-pi-bootup-screen.jpg
    :END:
 
+   TODO: add some explanation of what happens at boot, and why the first boot is longer (multiple steps)
 
+   The first time you boot will take longer than subsequent boots, because the system will resize the imaged file system to fill your storage, apply your settings, and finally boot the finished system.
+
+   You may see 2 or 3 boots during this stage.
 
 ** Establish SSH and/or VNC connection
-** use raspi-config to set sound and window manager
+
+   We imaged our storage with SSH credentials (maybe), so just make sure that works now.
+
+   I will use a combination of SSH and VNC to show what's happening on the nascent satellite
+
+** use raspi-config in the CLI to set sound and window manager
    :PROPERTIES:
    :image:    img/raspi-config-screen.png
    :END:
@@ -47,9 +80,13 @@
    + paplay tester.mp3
 
 ** Pull down the =wyoming-satellite= project from GitHub
+   :PROPERTIES:
+   :image:    img/wyoming-satellite-github-page.png
+   :END:
    To run a Wyoming protocol satellite for Home Assistant with Voice Assistant active, we need
    + wyoming-satellite
-     This is the piece that announces itself to Home Assistant server using the Wyoming protocol. It fits into the Voice Assistant pipeline.
+
+   This is the piece that announces itself to Home Assistant server using the Wyoming protocol. It fits into the Voice Assistant pipeline.
 
      #+begin_src bash :results verbatim replace
        sudo mkdir -p -v /data/homeassistant/
@@ -67,6 +104,9 @@
      ./script run -h
 #+end_src
 ** Use the =installer= in the wyoming-satellite directory
+   :PROPERTIES:
+   :image:    img/wyoming-satellite-installer-main-screen.png
+   :END:
    This script makes a lot of the setup a breeze.
 
    It includes pulling down the =wyoming-openwakeword=
@@ -108,134 +148,35 @@
 
   The wyoming-openwakeword service will be running on localhost/local loopback and will not be accessible to Home Assistant, nor should it be.  Why it is wrapped in the Wyoming protocol is anybody's guess.
 
+  If you are not able to register this new satellite, open up the network port and assure the wyoming-satellite service is running on an accessible interface (skip to the "Problems and Solutions" section)
 ** Test it all with "Hey Nabu, what's up?"
-
-** TRICKY, TRICKY - symlink your wakeword model names
-   The name of the wakeword model must match its file name - therefore we shall make some symlinks
-   #+begin_src bash :results output replace
-     cd /data/homeassistant/wyoming-openwakeword/wyoming_openwakeword/models/
-     for fname in *v[0-9]*\.tflite; do
-         modelname=$(echo "${fname}" | sed 's,\(.\+\)_v[0-9].\+\.tflite,\1.tflite,')
-         ln -s -v "${fname}" "${modelname}"
-     done
-   #+end_src
-
-** Install services to run automatically
-   #+begin_src conf :tangle /ssh:172.16.17.144:.config/systemd/user/local-openwakeword.service :mkdirp yes
-     [Unit]
-     Description=Local wakeword detection
-     After=network.target
-
-     [Service]
-     Type=simple
-     # User=gregj
-     Slice=home-assistant.slice
-     WorkingDirectory=/data/homeassistant/wyoming-openwakeword
-     ExecStart=/data/homeassistant/wyoming-openwakeword/script/run \
-           --uri 'tcp://127.0.0.1:10400' \
-           --threshold 0.5 \
-           --trigger-level 1 \
-           --custom-model-dir /data/homeassistant/wyoming-openwakeword/custom-wake-words \
-           --debug
-     Restart=on-failure
-
-     [Install]
-     WantedBy=default.target
-   #+end_src
-
-   #+begin_src conf :tangle /ssh:172.16.17.144:.config/systemd/user/wyoming-satellite.service :mkdirp yes
-     [Install]
-     WantedBy=default.target
-
-     # This runs on each satellite/pi - just records and speaks
-     # NOTE: Change name to something meaningful - like "Kitchen Satellite"
-
-     [Unit]
-     Description=Wyoming protocol satellite for Home Assistant
-     Wants=network-online.target
-     After=network-online.target
-     Requires=local-openwakeword.service
-
-     [Service]
-     ## NOTE: wake word name must match the model file (i.e. ok_nabu.tflite, not ok_nabu_v0.1.tflite)
-     Type=simple
-     # User=gregj
-     Slice=home-assistant.slice
-     Environment=XDG_RUNTIME_DIR=/run/user/1000
-     ExecStart=/data/homeassistant/wyoming-satellite/script/run \
-         --name 'kitchen satellite' \
-         --uri 'tcp://0.0.0.0:10700' \
-         --mic-command '/usr/bin/parec --rate=16000 --channels=1 --format=s16le --raw' \
-         --snd-command 'paplay --rate=22050 --channels=1 --format=s16le --raw' \
-         --mic-auto-gain 5 \
-         --mic-noise-suppression 2 \
-         --wake-uri 'tcp://127.0.0.1:10400' \
-         --wake-word-name 'hey_jarvis' \
-         --detection-command '/data/homeassistant/wyoming-satellite/examples/commands/detection.sh' \
-         --tts-stop-command '/data/homeassistant/wyoming-satellite/examples/commands/tts_stop.sh' \
-         --awake-wav '/data/homeassistant/wyoming-satellite/sounds/awake.wav' \
-         --done-wav  '/data/homeassistant/wyoming-satellite/sounds/done.wav' \
-         --timer-finished-wav '/data/homeassistant/wyoming-satellite/sounds/timer_finished.wav' \
-         --timer-finished-wav-repeat 3 2 \
-         --debug
-     WorkingDirectory=/data/homeassistant/wyoming-satellite
-     Restart=on-failure
-
-     # --tts-stop=command '/home/gregj/done.sh'
-     [Install]
-     WantedBy=default.target
-   #+end_src
-
-** Enable and start those services
-   #+begin_src bash
-     systemctl --user enable local-openwakeword.service
-     systemctl --user start local-openwakeword.service
-     systemctl --user status local-openwakeword.service
-   #+end_src
-
-
-   #+begin_src bash
-     systemctl --user enable wyoming-satellite.service
-     systemctl --user start wyoming-satellite.service
-     systemctl --user status wyoming-satellite.service
-   #+end_src
-
-** Sanity check - both ports should be open
-   #+begin_src bash
-     sudo netstat -anp | grep 10[47]00
-   #+end_src
-
-** Open up satellite port (and maybe openwakeword port) so Home Assistant can see 'em
-   This is necessary on Ubuntu, not on Debian
-
-   #+begin_src bash
-     sudo ufw allow 10700
-     sudo ufw allow 10400
-   #+end_src
-
-** Let Home Assistant know of this new satellite
-  In Home Assistant, go to Settings -> Devices
-  In Wyoming Protocol, add new satellite IP and port 10700
-
-  Note: there is no need to add the local open wakeword (though you can).  Just register the Wyoming Satellite
-
-** Set and store your alsa microphone levels
-   look for "capture" device(s) in `alsamixer`
-
-   Store with
-   #+begin_src bash
-     sudo alsactl store
-   #+end_src
-
-   Config will be store in =/var/lib/alsa/asound.state= and restored on reboot
-** A note about pulseaudio vs alsa
-
-   too much latency in my limited testing on devices more powerful than rpi
 
 ** Test it all with "Hey Nabu, what's up?"
 
 ** Problems and solutions
 
+*** Home Assistant does not see the wyoming-satellite port
+
+**** Sanity check -
+     The port should be open and running on 0.0.0.0 or an interface accessible to Home Assistant
+    #+begin_src bash
+      sudo netstat -anp | grep 10700
+    #+end_src
+
+
+**** Open up satellite port (and maybe openwakeword port) so Home Assistant can see 'em
+    This is necessary on Ubuntu, usually not on Debian
+
+    #+begin_src bash
+      sudo ufw allow 10700
+      sudo ufw allow 10400
+    #+end_src
+
+**** Look at logs on the satellite
+     #+begin_src bash
+       sudo journalctl -u wyoming-openwakeword -f
+       sudo journalctl -u wyoming-satellite -f
+#+end_src
 *** Touch screen drags, does not scroll
 
     Solution: use the Wayfire window manager for Wayland
@@ -250,6 +191,16 @@
       arecord -l
 
 
+    Set and store your alsa microphone levels
+
+    look for "capture" device(s) in `alsamixer`
+
+    Store with
+    #+begin_src bash
+      sudo alsactl store
+    #+end_src
+
+    Config will be store in =/var/lib/alsa/asound.state= and restored on reboot
 *** Full screen, no keyboard
     To manage this requirement:
 
