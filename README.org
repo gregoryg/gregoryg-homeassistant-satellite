@@ -409,26 +409,6 @@ To manage this requirement:
       Q:What song is playing?
       A:You are listening to {{ state_attr('media_player.spotify_gortsleigh', 'media_title') }} by {{ state_attr('media_player.spotify_gortsleigh', 'media_artist') }}. Not that I'm judging your music choices. Much.
       {%- endif %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #+end_src
 
 * How to downgrade Python for =tflite-runtime=
