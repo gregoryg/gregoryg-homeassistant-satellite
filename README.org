@@ -431,8 +431,6 @@ To manage this requirement:
 
 #+end_src
 
-* Odds and ends that may not be relevant when using wyoming-satellite installer
-** Ohai
 * How to downgrade Python for =tflite-runtime=
   TODO
 ** Assure you have a version of Python that works with wyoming-openwakeword
