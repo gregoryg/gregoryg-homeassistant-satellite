@@ -202,10 +202,10 @@ This is necessary on Ubuntu, usually not on Debian
        sudo journalctl -u wyoming-openwakeword -f
        sudo journalctl -u wyoming-satellite -f
 #+end_src
-*** Touch screen drags, does not scroll
+** Touch screen drags, does not scroll
 
 Solution: use the Wayfire window manager for Wayland
-*** Sound
+** Sound
 It doesn't always go well
 
 Keep some awareness of alsa (lowest level), pipewire and pulseaudio
@@ -226,13 +226,13 @@ Store with
     #+end_src
 
 Config will be stored in =/var/lib/alsa/asound.state= and restored on reboot
-*** Full screen, no keyboard
+** Full screen, no keyboard
 To manage this requirement:
 
     + enable VNC
     + be prepared to fiddle with an external keyboard (USB or Bluetooth)
     + install Browser Control Card from HACS
-*** Start browser full screen, limited user
+** Start browser full screen, limited user
     Place the following script in ~/.config/autostart
     #+begin_src bash
       #!/usr/bin/env bash
@@ -247,9 +247,8 @@ To manage this requirement:
 #+end_src
 
     + Set browser to dark mode, default dashboard, hide sidebar
-*** Consider setting up notifications using dunst or similar
-
-*** Set and store your alsa microphone levels
+** Consider setting up notifications using dunst or similar
+** Set and store your alsa microphone levels
     Look for "capture" device(s) in `alsamixer`
 
     Store with
@@ -258,7 +257,7 @@ To manage this requirement:
     #+end_src
 
     Config will be stored in =/var/lib/alsa/asound.state= and restored on reboot
-*** Fix weird wi-fi issue on Raspberry Pi (optional)
+** Fix weird wi-fi issue on Raspberry Pi (optional)
    + [[https://gist.github.com/jcberthon/ea8cfe278998968ba7c5a95344bc8b55][NetworkManager Wi-Fi powersaving configuration ≫ gist.github.com]]
 
    in =/etc/NetworkManager/conf.d/default-wifi-powersave-off.conf=
@@ -273,8 +272,7 @@ To manage this requirement:
    #+begin_src bash
      sudo systemctl restart NetworkManager.service
    #+end_src
-
-*** Install services to run as USER (Optional)
+** Install services to run as USER (Optional)
     This step is far beyond optional.  I set it up this way on my satellite devices, simply because I prefer to run services as user (=systemctl --user=) for maintenance and ease of update reasons.
 
     Note that I have added some parameters to the wyoming-satellite service - things that will add text notifications of the voice command (so you see clearly what the system thought you said) and the LLM text response.
