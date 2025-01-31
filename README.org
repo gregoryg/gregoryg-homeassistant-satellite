@@ -180,9 +180,8 @@ Check logs with
   If you are not able to register this new satellite, open up the network port and assure the wyoming-satellite service is running on an accessible interface (skip to the "Problems and Solutions" section)
 ** Test it all with "OK Nabu, what's up?"
 
-** Problems and solutions
-
-*** Home Assistant does not see the wyoming-satellite port
+* Problems and solutions
+** Home Assistant does not see the wyoming-satellite port
 
 **** Sanity check -
 The port should be open and running on 0.0.0.0 or an interface accessible to Home Assistant
