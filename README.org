@@ -360,7 +360,14 @@ To manage this requirement:
        systemctl --user start wyoming-satellite
 #+end_src
 ** Tweak to your liking - custom service in action with speech bubbles
+** User systemd service stops and does not restart
+   This was happening to me on my GPU machine that hosts TTS, LLM and STT services.
 
+   + [[https://serverfault.com/questions/1060405/user-service-stops-even-with-restart-always/1060470#1060470][systemd - User service stops even with Restart=always - Server Fault ≫ serverfault.com]]
+
+   If this is happening:
+   + run =loginctl enable-linger <user>=
+   + Add =KillUserProcesses=no= in =/etc/systemd/logind.conf=
 * LLM Prompting
   I will try to break this down into Home Assistant-specific segments that should always be included, and optional personality prompts
 
