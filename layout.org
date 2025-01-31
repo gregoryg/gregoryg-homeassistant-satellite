@@ -1,0 +1,37 @@
+* Architecture
+  #+begin_src mermaid :file ha-voice-assistant.png
+  flowchart TD
+      HA(Home Assistant Server) -->|Wyoming Protocol| Glados(GladOS)
+
+      subgraph Protomolecule
+          direction TB
+          VM(Home Assistant [VM: homeassistant])
+          Glados(GladOS)
+          VM --> Glados
+      end
+
+      subgraph KitchenPi [Satellite: kitchenpi]
+          Satellite(Wyoming Satellite)
+      end
+
+      Satellite -->|Wake Word | Glados
+
+      subgraph Aziriphale [GPU Machine: aziriphale]
+          whc(Whisper.cpp)
+          wywh(Wyoming Whisper)
+          wywh -->|STT Requests| whc
+          wywh -->|Transcribed Text| Glados
+
+          ollama(LLM Services)
+          ollama -->|LLM Response| Glados
+
+          wtyp(Wyoming Piper)
+          Glados -->|TTS Request| wtyp
+          wtyp -->|Audio| Satellite
+      end
+
+      Glados -->|LLM Request| CLLM(Cloud LLM Options: Ollama, ChatGPT, Anthropic...)
+      Glados -->|TTS Request| CTTS(Cloud TTS Options: Google Translate, ElevenLabs...)
+      CLLM -->|LLM Response| Glados
+      CTTS -->|Audio| Satellite
+#+end_src
