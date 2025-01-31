@@ -1,5 +1,11 @@
 #+property: header-args:bash :dir /ssh:172.16.17.144: :results verbatim replace
 #+title: Set up a Home Assistant Satellite with Voice
+* Assumptions
+** You have Home Assistant up and running in HAOS
+   You have the primary *supported* type of Home Assistant running HAOS either on a small storage device like a micro SD card, or in a virtual machine.  You are running it this way because you want the full UI, add-ons and easy updates.
+
+   You of course have the same functionality if you run Supervised Mode, but if you are doing that, you don't likely need of this document!
+**
 * Setting up on Raspberry Pi OS
 ** Start with a Voice Assistant pipeline in Home Assistant
    Show the integrations that have to be installed in Home Assistant server:
