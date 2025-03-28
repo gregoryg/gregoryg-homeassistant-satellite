@@ -1,0 +1,14 @@
+[Unit]
+Description=Music Player Daemon
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+# User=gregj
+WorkingDirectory=/home/gregj/.config/mpd
+ExecStart=/usr/bin/mpd --systemd /home/gregj/.config/mpd/mpd.conf
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

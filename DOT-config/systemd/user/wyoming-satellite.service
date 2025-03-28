@@ -1,0 +1,45 @@
+# This runs on each satellite/pi - just records and speaks
+# NOTE: Change name to something meaningful - like "Kitchen Satellite"
+
+[Unit]
+Description=Wyoming protocol satellite for Home Assistant
+Wants=network-online.target
+After=network-online.target
+Requires=local-openwakeword.service
+
+[Service]
+## NOTE: wake word name must match the model file (i.e. ok_nabu.tflite, not ok_nabu_v0.1.tflite)
+Type=simple
+# User=gregj
+Slice=home-assistant.slice
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/data/homeassistant/wyoming-satellite/script/run \
+    --name 'kitchen satellite' \
+    --uri 'tcp://0.0.0.0:10700' \
+    --vad \
+    --mic-command '/usr/bin/arecord --rate=16000 --channels=1 --format=s16_le --file-type=raw' \
+    --snd-command 'paplay --rate=22050 --channels=1 --format=s16le --raw' \
+    --mic-auto-gain 7 \
+    --mic-noise-suppression 2 \
+    --wake-uri 'tcp://127.0.0.1:10400' \
+    --wake-word-name 'ok_nabu' \
+    --transcript-command '/data/homeassistant/bin/transcript.sh' \
+    --synthesize-command '/data/homeassistant/bin/synthesize.sh' \
+    --detect-command '/data/homeassistant/bin/detection.sh' \
+    --awake-wav '/data/homeassistant/wyoming-satellite/sounds/awake.wav' \
+    --done-wav  '/data/homeassistant/wyoming-satellite/sounds/done.wav' \
+    --timer-finished-wav '/data/homeassistant/wyoming-satellite/sounds/timer_finished.wav' \
+    --timer-finished-wav-repeat 3 2 \
+    --timer-started-command '/home/gregj/bin/tally-me-timer.sh' \
+    --timer-finished-command '/home/gregj/bin/tally-me-timer-stop.sh' \
+    --wake-refractory-seconds 0 \
+    --debug \
+    --debug-recording-dir /tmp
+WorkingDirectory=/data/homeassistant/wyoming-satellite
+Restart=on-failure
+
+# --tts-stop=command '/home/gregj/done.sh'
+# --mic-command '/usr/bin/parec --rate=16000 --channels=1 --format=s16le --raw' \
+# --snd-command 'paplay --rate=22050 --channels=1 --format=s16le --raw' \
+[Install]
+WantedBy=default.target

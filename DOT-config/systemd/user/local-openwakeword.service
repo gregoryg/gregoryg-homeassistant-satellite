@@ -1,0 +1,20 @@
+[Unit]
+Description=Local wakeword detection
+Wants=network-online.target
+Wants=sound.target
+After=network.target
+After=sound.target
+
+[Service]
+Slice=home-assistant.slice
+WorkingDirectory=/data/homeassistant/wyoming-openwakeword
+ExecStart=/data/homeassistant/wyoming-openwakeword/script/run \
+      --uri 'tcp://127.0.0.1:10400' \
+      --threshold 0.5 \
+      --trigger-level 1 \
+      --custom-model-dir /data/homeassistant/wyoming-openwakeword/custom-wake-words \
+      --debug
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
